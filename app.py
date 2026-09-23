@@ -476,6 +476,10 @@ try:
         )
 
         # 2. Trade Setup Table
+        entry_str = f"₹{sig['entry']:,.2f}" if sig['entry'] else "--"
+        target_str = f"₹{sig['target']:,.2f}" if sig['target'] else "--"
+        sl_str = f"₹{sig['sl']:,.2f}" if sig['sl'] else "--"
+
         st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
         st.markdown("##### 🎯 Trade Setup")
         st.markdown(
@@ -488,9 +492,9 @@ try:
                     <th>R : R</th>
                 </tr>
                 <tr>
-                    <td><b>₹{sig['entry']:,.2f}</b> if sig['entry'] else "--"</td>
-                    <td style="color:#059669"><b>₹{sig['target']:,.2f}</b> if sig['target'] else "--"</td>
-                    <td style="color:#dc2626"><b>₹{sig['sl']:,.2f}</b> if sig['sl'] else "--"</td>
+                    <td><b>{entry_str}</b></td>
+                    <td style="color:#059669"><b>{target_str}</b></td>
+                    <td style="color:#dc2626"><b>{sl_str}</b></td>
                     <td>1 : {sig['rr']:.2f}</td>
                 </tr>
             </table>
