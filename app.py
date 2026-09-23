@@ -1,4 +1,77 @@
-# ---------------- RIGHT COLUMN: Structured Horizontal Tables ----------------
+# ---------------- 2-Column Split Layout ----------------
+    col_left, col_right = st.columns([7, 5])
+
+    # LEFT COLUMN: Subplot Charts
+    with col_left:
+        # Define Subplot rows dynamically based on visible indicators
+        active_rows = 1
+        if show_rsi: active_rows += 1
+        if show_macd: active_rows += 1
+
+        row_heights = [0.55] + ([0.225] * (active_rows - 1)) if active_rows > 1 else [1.0]
+
+        fig = make_subplots(
+            rows=active_rows,
+            cols=1,
+            shared_xaxes=True,
+            vertical_spacing=0.03,
+            row_heights=row_heights,
+        )
+
+        # 1. Main Candlestick & Overlays
+        fig.add_trace(
+            go.Candlestick(
+                x=df.index, open=df["Open"], high=df["High"], low=df["Low"], close=df["Close"],
+                increasing_line_color="#059669", increasing_fillcolor="#10b981",
+                decreasing_line_color="#dc2626", decreasing_fillcolor="#ef4444",
+                name="Price",
+            ),
+            row=1, col=1,
+        )
+
+        fig.add_trace(go.Scatter(x=df.index, y=df["EMA_20"], line=dict(color="#d97706", width=1.2), name="EMA 20"), row=1, col=1)
+        fig.add_trace(go.Scatter(x=df.index, y=df["EMA_50"], line=dict(color="#7c3aed", width=1.2), name="EMA 50"), row=1, col=1)
+        fig.add_trace(go.Scatter(x=df.index, y=df["VWAP"], line=dict(color="#2563eb", width=1.2), name="VWAP"), row=1, col=1)
+        fig.add_trace(go.Scatter(x=df.index, y=df["Supertrend"], line=dict(color="#0284c7", width=1.2), name="Supertrend"), row=1, col=1)
+
+        # Targets / SL Lines
+        if sig["action"] in ("BUY", "SELL"):
+            fig.add_hline(y=sig["entry"], line_dash="dash", line_color="#2563eb", annotation_text="Entry", row=1, col=1)
+            fig.add_hline(y=sig["sl"], line_dash="dash", line_color="#dc2626", annotation_text="SL", row=1, col=1)
+            fig.add_hline(y=sig["target"], line_dash="dash", line_color="#059669", annotation_text="Target", row=1, col=1)
+
+        current_row = 2
+
+        # 2. RSI Subplot
+        if show_rsi:
+            fig.add_trace(go.Scatter(x=df.index, y=df["RSI"], line=dict(color="#2563eb", width=1.3), name="RSI"), row=current_row, col=1)
+            fig.add_hline(y=70, line_dash="dot", line_color="#dc2626", row=current_row, col=1)
+            fig.add_hline(y=30, line_dash="dot", line_color="#059669", row=current_row, col=1)
+            fig.update_yaxes(range=[0, 100], row=current_row, col=1)
+            current_row += 1
+
+        # 3. MACD Subplot
+        if show_macd:
+            hist_colors = ["#059669" if v >= 0 else "#dc2626" for v in df["MACD_hist"].fillna(0)]
+            fig.add_trace(go.Bar(x=df.index, y=df["MACD_hist"], marker_color=hist_colors, name="Hist"), row=current_row, col=1)
+            fig.add_trace(go.Scatter(x=df.index, y=df["MACD"], line=dict(color="#2563eb", width=1.2), name="MACD"), row=current_row, col=1)
+            fig.add_trace(go.Scatter(x=df.index, y=df["MACD_signal"], line=dict(color="#d97706", width=1.2), name="Signal"), row=current_row, col=1)
+
+        fig.update_layout(
+            template="plotly_white",
+            paper_bgcolor="#ffffff",
+            plot_bgcolor="#ffffff",
+            margin=dict(l=10, r=10, t=10, b=10),
+            height=620,
+            showlegend=False,
+            xaxis_rangeslider_visible=False,
+        )
+        fig.update_xaxes(showgrid=True, gridcolor="#f1f5f9")
+        fig.update_yaxes(showgrid=True, gridcolor="#f1f5f9")
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    # RIGHT COLUMN: Structured Horizontal Tables
     with col_right:
         # Signal Header Badge
         badge_class = "signal-buy" if sig['action'] == "BUY" else ("signal-sell" if sig['action'] == "SELL" else "signal-hold")
@@ -38,7 +111,7 @@
             unsafe_allow_html=True,
         )
 
-        # Helper formatting variables to prevent NoneType errors safely
+        # Pre-format strings safely for None values
         entry_str = f"₹{sig['entry']:,.2f}" if sig["entry"] is not None else "--"
         target_str = f"₹{sig['target']:,.2f}" if sig["target"] is not None else "--"
         sl_str = f"₹{sig['sl']:,.2f}" if sig["sl"] is not None else "--"
